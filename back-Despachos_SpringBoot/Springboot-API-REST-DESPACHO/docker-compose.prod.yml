@@ -1,0 +1,38 @@
+services:
+  mysql-despachos:
+    image: mysql:8.4
+    container_name: mysql-despachos
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - despachos_mysql_data:/var/lib/mysql
+    networks:
+      - despachos-net
+    restart: unless-stopped
+
+  backend-despachos:
+    image: ${DOCKERHUB_USERNAME}/backend-despachos:latest
+    container_name: backend-despachos
+    depends_on:
+      - mysql-despachos
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-despachos:3306/${MYSQL_DATABASE}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "8082:8080"
+    networks:
+      - despachos-net
+    restart: unless-stopped
+
+volumes:
+  despachos_mysql_data:
+    name: despachos_mysql_data
+
+networks:
+  despachos-net:
+    name: despachos-net
