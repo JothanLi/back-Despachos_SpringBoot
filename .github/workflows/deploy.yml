@@ -26,7 +26,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ./back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
+          file: ./back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/backend-despachos:latest
 
