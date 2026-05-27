@@ -23,7 +23,7 @@ public class DespachoController {
     @Autowired
     private DespachoService despachoService;
 
-    @Operation(summary = "Nuevo despacho")
+    @Operation(summary = "Crear un nuevo despacho")
     @PostMapping
     public ResponseEntity<Despacho> crearDespacho(
             @RequestBody Despacho despacho){
