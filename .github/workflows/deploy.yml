@@ -63,11 +63,11 @@ jobs:
             mysql-despachos:
               image: mysql:8.4
               container_name: mysql-despachos
-              environment:
-                MYSQL_DATABASE: {mysql_database}
-                MYSQL_USER: {mysql_user}
-                MYSQL_PASSWORD: {mysql_password}
-                MYSQL_ROOT_PASSWORD: {mysql_root_password}
+          environment:
+            SPRING_PROFILES_ACTIVE: docker
+            SPRING_DATASOURCE_URL: jdbc:mysql://mysql-despachos:3306/{mysql_database}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+            SPRING_DATASOURCE_USERNAME: {mysql_user}
+            SPRING_DATASOURCE_PASSWORD: {mysql_password}
               volumes:
                 - despachos_mysql_data:/var/lib/mysql
               networks:
