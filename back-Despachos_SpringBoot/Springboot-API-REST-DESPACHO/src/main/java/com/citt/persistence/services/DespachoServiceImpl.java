@@ -3,56 +3,70 @@ package com.citt.persistence.services;
 import com.citt.exceptions.DespachoNotFoundException;
 import com.citt.persistence.entity.Despacho;
 import com.citt.persistence.repository.DespachoRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
-public class DespachoServiceImpl implements DespachoService{
+@Transactional
+public class DespachoServiceImpl implements DespachoService {
 
-    @Autowired
-    private DespachoRepository despachoRepository;
+    private final DespachoRepository despachoRepository;
+
+    public DespachoServiceImpl(DespachoRepository despachoRepository) {
+        this.despachoRepository = despachoRepository;
+    }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Despacho> findAllDespachos() {
         return despachoRepository.findAll();
     }
 
     @Override
     public Despacho saveDespacho(Despacho despacho) {
+        despacho.setIdDespacho(null);
+        if (despacho.getIntento() == null) {
+            despacho.setIntento(0);
+        }
+        if (despacho.getDespachado() == null) {
+            despacho.setDespachado(false);
+        }
         return despachoRepository.save(despacho);
     }
 
     @Override
     public Despacho updateDespacho(Long idDespacho, Despacho despacho) throws DespachoNotFoundException {
-        return despachoRepository.findById(idDespacho).map(existingDespacho -> {
-            existingDespacho.setFechaDespacho(despacho.getFechaDespacho());
-            existingDespacho.setPatenteCamion(despacho.getPatenteCamion());
-            existingDespacho.setIntento(despacho.getIntento());
-            existingDespacho.setIdCompra(despacho.getIdCompra());
-            existingDespacho.setDireccionCompra(despacho.getDireccionCompra());
-            existingDespacho.setValorCompra(despacho.getValorCompra());
-            existingDespacho.setDespachado(despacho.isDespachado());
-            return despachoRepository.save(existingDespacho);
-        }).orElseThrow(() -> new DespachoNotFoundException("Despacho no encontrado con ID: " + idDespacho));
+        Despacho existente = findById(idDespacho);
+        existente.setFechaDespacho(despacho.getFechaDespacho());
+        existente.setPatenteCamion(despacho.getPatenteCamion());
+        existente.setIntento(despacho.getIntento());
+        existente.setIdCompra(despacho.getIdCompra());
+        existente.setDireccionCompra(despacho.getDireccionCompra());
+        existente.setValorCompra(despacho.getValorCompra());
+        existente.setDespachado(despacho.getDespachado());
+        return despachoRepository.save(existente);
+    }
+
+    @Override
+    public Despacho updateEstado(Long idDespacho, Integer intento, Boolean despachado) throws DespachoNotFoundException {
+        Despacho existente = findById(idDespacho);
+        existente.setIntento(intento);
+        existente.setDespachado(despachado);
+        return despachoRepository.save(existente);
     }
 
     @Override
     public void deleteDespacho(Long idDespacho) throws DespachoNotFoundException {
-        Optional<Despacho> despacho = despachoRepository.findById(idDespacho);
-        if(!despacho.isPresent()){
-            throw new DespachoNotFoundException("¡No es posible eliminar! No existe despacho con el ID:" + idDespacho);
-        }else {
-            despachoRepository.deleteById(idDespacho);
-        }
+        Despacho despacho = findById(idDespacho);
+        despachoRepository.delete(despacho);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Despacho findById(Long idDespacho) throws DespachoNotFoundException {
-        Optional<Despacho> despacho = despachoRepository.findById(idDespacho);
-        if(!despacho.isPresent()) throw new DespachoNotFoundException("¡No existe despacho con el ID:" + idDespacho);
-        return despacho.get();
+        return despachoRepository.findById(idDespacho)
+                .orElseThrow(() -> new DespachoNotFoundException("Despacho no encontrado con ID: " + idDespacho));
     }
 }

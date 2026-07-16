@@ -7,8 +7,14 @@ import java.util.List;
 
 public interface DespachoService {
     List<Despacho> findAllDespachos();
+
     Despacho saveDespacho(Despacho despacho);
+
     Despacho updateDespacho(Long idDespacho, Despacho despacho) throws DespachoNotFoundException;
-    void deleteDespacho(Long idDespacho) throws DespachoNotFoundException, DespachoNotFoundException;
+
+    Despacho updateEstado(Long idDespacho, Integer intento, Boolean despachado) throws DespachoNotFoundException;
+
+    void deleteDespacho(Long idDespacho) throws DespachoNotFoundException;
+
     Despacho findById(Long idDespacho) throws DespachoNotFoundException;
 }

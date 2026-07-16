@@ -5,37 +5,51 @@ services:
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-despachosdb}
       MYSQL_USER: ${MYSQL_USER:-despachosuser}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-despachospass123}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass123}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Define MYSQL_PASSWORD en .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Define MYSQL_ROOT_PASSWORD en .env}
     ports:
       - "3308:3306"
     volumes:
       - despachos_mysql_data:/var/lib/mysql
     networks:
       - despachos-net
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     restart: unless-stopped
 
   backend-despachos:
     build: .
-    image: ${DOCKERHUB_USERNAME:-local}/backend-despachos:latest
+    image: local/backend-despachos:latest
     container_name: backend-despachos
     depends_on:
-      - mysql-despachos
+      mysql-despachos:
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql-despachos:3306/${MYSQL_DATABASE:-despachosdb}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-despachosuser}
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-despachospass123}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:?Define MYSQL_PASSWORD en .env}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost,http://localhost:5173}
     ports:
-      - "8082:8081"
+      - "8082:8080"
     networks:
-      - despachos-net
+      despachos-net:
+        aliases:
+          - despachos-service
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health/readiness || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 45s
     restart: unless-stopped
 
 volumes:
   despachos_mysql_data:
-    name: despachos_mysql_data
 
 networks:
   despachos-net:
-    name: despachos-net
