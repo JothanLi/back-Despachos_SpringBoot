@@ -196,17 +196,22 @@ jobs:
 
           kubectl get storageclass
 
-      - name: Desplegar MySQL persistente
+      - name: Desplegar MySQL Despachos
         run: |
-          kubectl apply \
-            -f "$APP_DIR/k8s/mysql-despachos-service.yaml"
+          kubectl create secret generic mysql-despachos-secret \
+            --from-literal=MYSQL_DATABASE="${{ secrets.MYSQL_DATABASE }}" \
+            --from-literal=MYSQL_USER="${{ secrets.MYSQL_USER }}" \
+            --from-literal=MYSQL_PASSWORD="${{ secrets.MYSQL_PASSWORD }}" \
+            --from-literal=MYSQL_ROOT_PASSWORD="${{ secrets.MYSQL_ROOT_PASSWORD }}" \
+            -n "$K8S_NAMESPACE" \
+            --dry-run=client -o yaml | kubectl apply -f -
 
-          kubectl apply \
-            -f "$APP_DIR/k8s/mysql-despachos-statefulset.yaml"
+          kubectl apply -f "$APP_DIR/k8s/mysql-despachos-deployment.yaml"
+          kubectl apply -f "$APP_DIR/k8s/mysql-despachos-service.yaml"
 
-          kubectl rollout status statefulset/mysql-despachos \
+          kubectl rollout status deployment/mysql-despachos \
             --namespace "$K8S_NAMESPACE" \
-            --timeout=12m
+            --timeout=8m
 
       - name: Desplegar API de Despachos
         run: |
@@ -257,10 +262,6 @@ jobs:
           kubectl get services \
             --namespace "$K8S_NAMESPACE"
 
-          echo "=== StatefulSets ==="
-          kubectl get statefulsets \
-            --namespace "$K8S_NAMESPACE"
-
           echo "=== Persistencia ==="
           kubectl get pvc \
             --namespace "$K8S_NAMESPACE"
@@ -277,18 +278,9 @@ jobs:
             --namespace "$K8S_NAMESPACE" \
             --sort-by=.metadata.creationTimestamp || true
 
-          echo "=== Descripción de MySQL ==="
-          kubectl describe statefulset/mysql-despachos \
-            --namespace "$K8S_NAMESPACE" || true
-
           echo "=== Descripción de Despachos ==="
           kubectl describe deployment/despachos \
             --namespace "$K8S_NAMESPACE" || true
-
-          echo "=== Logs de MySQL ==="
-          kubectl logs statefulset/mysql-despachos \
-            --namespace "$K8S_NAMESPACE" \
-            --tail=150 || true
 
           echo "=== Logs de Despachos ==="
           kubectl logs deployment/despachos \
