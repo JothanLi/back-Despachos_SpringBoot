@@ -217,6 +217,9 @@ jobs:
           kubectl apply \
             -f "$APP_DIR/k8s/despachos-service.yaml"
 
+          kubectl apply \
+            -f "$APP_DIR/k8s/despachos-hpa.yaml"
+
           kubectl rollout status deployment/despachos \
             --namespace "$K8S_NAMESPACE" \
             --timeout=12m
